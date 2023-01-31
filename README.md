@@ -2,6 +2,8 @@
 
 text2bin is a simple tool to convert text file into binary file. The binary file can not be read directly and can be easily read by text2bin api. So, this can be simplely used for text file protection when you don't want the contents of the text to be seen by others.
 
+*Warning: The filesize of output binary file will be 2~3 fold then the original text file, so it's more suitable for small files.*
+
 ### install
 
 ```
@@ -35,5 +37,4 @@ with text2bin.Bopen("example/a.tb") as fi:
 # hello!
 ```
 
-*text2bin also can be used for binary binary file, but this not for recommend.*
-
+*text2bin also can be used for binary binary file, but this is not for recommend.*
