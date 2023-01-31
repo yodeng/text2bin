@@ -52,7 +52,7 @@ class Bopen(object):
         return Bread(self.handler)
 
     def close(self):
-        if not self.handler.closed:
+        if not self.closed:
             self.handler.close()
 
     @property
