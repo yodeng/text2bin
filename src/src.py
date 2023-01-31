@@ -25,6 +25,7 @@ class Bread(object):
                 raise StopIteration
             b = struct.unpack('I', b_line)[0].to_bytes(1, "big")
             line += b
+            _ = self.handler.read(Bopen.iv)
             if b == b"\n":
                 return line
 
@@ -33,6 +34,7 @@ class Bopen(object):
 
     qss = struct.calcsize("Q")
     iss = struct.calcsize("I")
+    iv = 1
 
     def __init__(self, name):
         self.name = name
@@ -41,7 +43,7 @@ class Bopen(object):
         self.handler.read(offset-self.qss)
 
     @staticmethod
-    def human(num):
+    def hnum(num):
         b1 = (num & 0x000000FF) << 24
         b2 = (num & 0x0000FF00) << 8
         b3 = (num & 0x00FF0000) >> 8
@@ -49,7 +51,7 @@ class Bopen(object):
         return sum((b1, b2, b3, b4))
 
     def __enter__(self):
-        return Bread(self.handler)
+        return self.iterlines()
 
     def close(self):
         if not self.closed:
@@ -71,7 +73,7 @@ class Bopen(object):
     @classmethod
     def tobin(cls, intext, outbin):
         with open(intext, "rb") as fi, open(outbin, "wb") as fo:
-            size = cls.human(os.path.getsize(intext))
+            size = cls.hnum(os.path.getsize(intext))
             md5 = hashlib.md5(str(size).encode()).hexdigest()[:2]
             offset = max(sum([ord(i) for i in md5]), 20)
             fo.write(struct.pack('<Q', offset))
@@ -80,4 +82,5 @@ class Bopen(object):
                 b_line = b""
                 for c in line:
                     b_line += struct.pack('I', c)
+                    b_line += os.urandom(cls.iv)
                 fo.write(b_line)
