@@ -18,12 +18,11 @@ class Bread(object):
     def __next__(self):
         line = self.line
         while True:
-            b_line = self.handler.read(Bopen.iss)
+            b = self.handler.read(1)
             if not b_line:
                 if line:
                     return line
                 raise StopIteration
-            b = struct.unpack('I', b_line)[0].to_bytes(1, "big")
             line += b
             _ = self.handler.read(Bopen.iv)
             if b == b"\n":
@@ -33,7 +32,6 @@ class Bread(object):
 class Bopen(object):
 
     qss = struct.calcsize("Q")
-    iss = struct.calcsize("I")
     iv = 1
 
     def __init__(self, name):
@@ -62,7 +60,7 @@ class Bopen(object):
         return self.handler.closed
 
     def readlines(self):
-        return list(Bread(self.handler))
+        return list(self.iterlines())
 
     def iterlines(self):
         return Bread(self.handler)
@@ -81,6 +79,6 @@ class Bopen(object):
             for line in fi:
                 b_line = b""
                 for c in line:
-                    b_line += struct.pack('I', c)
+                    b_line += c.to_bytes(1, "big")
                     b_line += os.urandom(cls.iv)
                 fo.write(b_line)
