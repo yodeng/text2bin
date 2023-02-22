@@ -22,7 +22,7 @@ def read_bin():
         raise IOError("No such file ", binfile)
     with Bopen(binfile) as fi:
         for line in fi:
-            print(line.decode().strip())
+            sys.stdout.write(line)
 
 
 def main():

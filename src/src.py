@@ -22,12 +22,12 @@ class Bread(object):
             b = self.handler.read(1)
             if not b:
                 if line:
-                    return line
+                    return line.decode()
                 raise StopIteration
             line += b
             _ = self.handler.read(Bopen.iv)
             if b == b"\n":
-                return line
+                return line.decode()
 
 
 class Bopen(object):
@@ -68,7 +68,7 @@ class Bopen(object):
             _ = self.handler.read(Bopen.iv)
             if n and len(content) == n:
                 break
-        return content
+        return content.decode()
 
     @property
     def closed(self):
@@ -77,10 +77,21 @@ class Bopen(object):
     def readlines(self):
         return list(self.iterlines())
 
+    def readline(self):
+        try:
+            line = next(Bread(self.handler))
+        except StopIteration:
+            return ""
+        else:
+            return line
+
     def iterlines(self):
         return Bread(self.handler)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def __del__(self):
         self.close()
 
     @classmethod

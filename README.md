@@ -30,7 +30,7 @@ $ text2bin -i a.txt -o a.tb
 import text2bin 
 with text2bin.Bopen("example/a.tb") as fi:
     for line in fi:
-        print(line.decode().strip())
+        print(line.strip())
 
 ## this will output:
 # 你好！
