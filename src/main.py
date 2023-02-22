@@ -16,6 +16,15 @@ def parseArg():
     return parser.parse_args()
 
 
+def read_bin():
+    binfile = sys.argv[1]
+    if not os.path.isfile(binfile):
+        raise IOError("No such file ", binfile)
+    with Bopen(binfile) as fi:
+        for line in fi:
+            print(line.decode().strip())
+
+
 def main():
     args = parseArg()
     Bopen.tobin(args.input, args.output)
