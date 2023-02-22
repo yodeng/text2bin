@@ -19,7 +19,7 @@ class Bread(object):
         line = self.line
         while True:
             b = self.handler.read(1)
-            if not b_line:
+            if not b:
                 if line:
                     return line
                 raise StopIteration
@@ -54,6 +54,20 @@ class Bopen(object):
     def close(self):
         if not self.closed:
             self.handler.close()
+
+    def read(self, n=None):
+        content = b""
+        if n is not None and n == 0:
+            return content
+        while True:
+            b = self.handler.read(1)
+            if not b:
+                break
+            content += b
+            _ = self.handler.read(Bopen.iv)
+            if n and len(content) == n:
+                break
+        return content
 
     @property
     def closed(self):
