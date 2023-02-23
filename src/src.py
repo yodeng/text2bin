@@ -31,6 +31,14 @@ class Bread(object):
             if b == b"\n":
                 return line.decode()
 
+    def readline(self):
+        try:
+            line = next(self)
+        except StopIteration:
+            return ""
+        else:
+            return line
+
 
 class Bopen(object):
 
