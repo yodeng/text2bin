@@ -6,6 +6,8 @@ import struct
 import hashlib
 import argparse
 
+IV = 1
+
 
 class Bread(object):
 
@@ -25,7 +27,7 @@ class Bread(object):
                     return line.decode()
                 raise StopIteration
             line += b
-            _ = self.handler.read(Bopen.iv)
+            _ = self.handler.read(IV)
             if b == b"\n":
                 return line.decode()
 
@@ -33,13 +35,17 @@ class Bread(object):
 class Bopen(object):
 
     qss = struct.calcsize("Q")
-    iv = 1
 
     def __init__(self, name):
         self.name = name
         self.handler = open(self.name, "rb")
         offset = struct.unpack('<Q', self.handler.read(self.qss))[0]
-        self.handler.read(offset-self.qss)
+        if offset > 1000:
+            self.handler.seek(0)
+            global IV
+            IV = 0
+        else:
+            self.handler.read(offset-self.qss)
 
     @staticmethod
     def hnum(num):
@@ -65,7 +71,7 @@ class Bopen(object):
             if not b:
                 break
             content += b
-            _ = self.handler.read(Bopen.iv)
+            _ = self.handler.read(IV)
             if n and len(content) == n:
                 break
         return content.decode()
@@ -106,5 +112,5 @@ class Bopen(object):
                 b_line = b""
                 for c in line:
                     b_line += c.to_bytes(1, "big")
-                    b_line += os.urandom(cls.iv)
+                    b_line += os.urandom(IV)
                 fo.write(b_line)
