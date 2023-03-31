@@ -21,6 +21,7 @@ requirements:
         - python
         - cython
         - pip
+        - pycryptodome
 
 about:
     home: https://github.com/yodeng/text2bin
