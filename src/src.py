@@ -2,105 +2,51 @@
 
 import os
 import sys
-import struct
-import hashlib
 import argparse
 
-IV = 1
+from io import StringIO
 
-
-class Bread(object):
-
-    def __init__(self, handler):
-        self.handler = handler
-        self.line = b""
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        line = self.line
-        while True:
-            b = self.handler.read(1)
-            if not b:
-                if line:
-                    return line.decode()
-                raise StopIteration
-            line += b
-            _ = self.handler.read(IV)
-            if b == b"\n":
-                return line.decode()
-
-    def readline(self):
-        try:
-            line = next(self)
-        except StopIteration:
-            return ""
-        else:
-            return line
+from ._crypto import CryptoData
 
 
 class Bopen(object):
 
-    qss = struct.calcsize("Q")
-
     def __init__(self, name):
         self.name = name
-        self.handler = open(self.name, "rb")
-        offset = struct.unpack('<Q', self.handler.read(self.qss))[0]
-        if offset > 1000:
-            self.handler.seek(0)
-            global IV
-            IV = 0
-        else:
-            self.handler.read(offset-self.qss)
+        self.data = self._cache_data()
 
-    @staticmethod
-    def hnum(num):
-        b1 = (num & 0x000000FF) << 24
-        b2 = (num & 0x0000FF00) << 8
-        b3 = (num & 0x00FF0000) >> 8
-        b4 = (num & 0xFF000000) >> 24
-        return sum((b1, b2, b3, b4))
+    def _cache_data(self):
+        try:
+            dh = StringIO()
+            c = b""
+            for chunk in CryptoData.decrypt_file_iter(self.name):
+                c += chunk
+            dh.write(c.decode())
+            del c
+            dh.seek(0)
+        except:
+            dh = open(self.name)
+        return dh
 
     def __enter__(self):
-        return self.iterlines()
-
-    def close(self):
-        if not self.closed:
-            self.handler.close()
+        return self.data
 
     def read(self, n=None):
-        content = b""
-        if n is not None and n == 0:
-            return content
-        while True:
-            b = self.handler.read(1)
-            if not b:
-                break
-            content += b
-            _ = self.handler.read(IV)
-            if n and len(content) == n:
-                break
-        return content.decode()
+        return self.data.read(n)
 
     @property
     def closed(self):
-        return self.handler.closed
+        return self.data.closed
+
+    def close(self):
+        if not self.closed:
+            self.data.close()
 
     def readlines(self):
-        return list(self.iterlines())
+        return self.data.readlines()
 
     def readline(self):
-        try:
-            line = next(Bread(self.handler))
-        except StopIteration:
-            return ""
-        else:
-            return line
-
-    def iterlines(self):
-        return Bread(self.handler)
+        return self.data.readline()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
@@ -108,17 +54,9 @@ class Bopen(object):
     def __del__(self):
         self.close()
 
+    def seek0(self):
+        self.data.seek(0)
+
     @classmethod
     def tobin(cls, intext, outbin):
-        with open(intext, "rb") as fi, open(outbin, "wb") as fo:
-            size = cls.hnum(os.path.getsize(intext))
-            md5 = hashlib.md5(str(size).encode()).hexdigest()[:2]
-            offset = max(sum([ord(i) for i in md5]), 20)
-            fo.write(struct.pack('<Q', offset))
-            fo.write(os.urandom(offset-cls.qss))
-            for line in fi:
-                b_line = b""
-                for c in line:
-                    b_line += c.to_bytes(1, "big")
-                    b_line += os.urandom(IV)
-                fo.write(b_line)
+        CryptoData.encrypt_file(intext, outbin)

@@ -6,10 +6,10 @@ from ._version import __version__
 
 def parseArg():
     parser = argparse.ArgumentParser(
-        description="simple tools for convert text to binary file and read binary file",)
+        description="tools for encrypt a text file",)
     parser.add_argument("-i", "--input", type=str,
                               help='input text file, required', required=True, metavar="<file>")
-    parser.add_argument('-o', "--output", help="output binary file, required",
+    parser.add_argument('-o', "--output", help="output encrypted binary file, required",
                               type=str, required=True, metavar="<file>")
     parser.add_argument("-v", '--version',  action='version',
                         version="v" + __version__)

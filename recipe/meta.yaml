@@ -6,7 +6,7 @@ package:
 
 build:
     number: 0
-    string: py3_1
+    string: py3
     script: {{ PYTHON }} -m pip install -vv .
 
 source:
