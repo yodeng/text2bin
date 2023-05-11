@@ -12,7 +12,7 @@ from ._crypto import CryptoData
 class Bopen(object):
 
     def __init__(self, name):
-        self.name = name
+        self.name = os.path.abspath(name)
         self.chunksize = self.get_chunksize(name)
         self.data = self._cache_data()
 
@@ -34,6 +34,20 @@ class Bopen(object):
     def __enter__(self):
         return self.data
 
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def __next__(self):
+        line = self.readline()
+        if not line:
+            raise StopIteration
+        return line
+
+    def __iter__(self):
+        return self
+
+    next = __next__
+
     def read(self, n=None):
         return self.data.read(n)
 
@@ -50,9 +64,6 @@ class Bopen(object):
 
     def readline(self):
         return self.data.readline()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
 
     def __del__(self):
         self.close()
