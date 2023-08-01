@@ -11,16 +11,17 @@ from ._crypto import CryptoData
 
 class Bopen(object):
 
-    def __init__(self, name):
+    def __init__(self, name, key=None):
         self.name = os.path.abspath(name)
         self.chunksize = self.get_chunksize(name)
         self.data = self._cache_data()
+        self.key = key
 
     def _cache_data(self):
         try:
             dh = StringIO()
             c = b""
-            for chunk in CryptoData.decrypt_file_iter(self.name, chunksize=self.chunksize):
+            for chunk in CryptoData.decrypt_file_iter(self.name, chunksize=self.chunksize, key=self.key):
                 c += chunk
             dh.write(c.decode())
             del c
@@ -78,6 +79,6 @@ class Bopen(object):
         return max(size, 64 * 1024)
 
     @staticmethod
-    def tobin(infile, outbin):
+    def tobin(infile, outbin, key=""):
         chunksize = Bopen.get_chunksize(infile)
-        CryptoData.encrypt_file(infile, outbin, chunksize=chunksize)
+        CryptoData.encrypt_file(infile, outbin, chunksize=chunksize, key=key)
