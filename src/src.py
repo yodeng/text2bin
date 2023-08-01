@@ -13,9 +13,9 @@ class Bopen(object):
 
     def __init__(self, name, key=None):
         self.name = os.path.abspath(name)
+        self.key = key
         self.chunksize = self.get_chunksize(name)
         self.data = self._cache_data()
-        self.key = key
 
     def _cache_data(self):
         try:
@@ -57,7 +57,7 @@ class Bopen(object):
         return self.data.closed
 
     def close(self):
-        if not self.closed:
+        if hasattr(self, "data") and not self.closed:
             self.data.close()
 
     def readlines(self):

@@ -7,6 +7,7 @@ import struct
 import string
 import base64
 import random
+import hashlib
 
 from Crypto import Random
 from Crypto.Cipher import AES
@@ -16,10 +17,11 @@ __all__ = ["CryptoData"]
 
 
 def real_key(key, seed=2050):
+    key = str(key)
     random.seed(seed)
-    abc = string.ascii_letters + string.punctuation + string.digits
+    abc = string.ascii_letters + string.punctuation + string.digits + "\0"
     one_time_pad = list(abc)
-    one_key = "".join(random.sample(abc, 32))
+    one_key = "".join(random.sample(abc, len(key)))
     random.shuffle(one_time_pad)
     ciphertext = ''
     for idx, char in enumerate(key):
@@ -30,11 +32,11 @@ def real_key(key, seed=2050):
     return ciphertext
 
 
-def add_to_16(v, salt="add_to_16"):
+def add_to_32(v, salt="add_to_32"):
     s = v + salt
     while len(s) % 32 != 0:
         s += "\0"
-    return base64.b64encode(s.encode())[:32].decode()
+    return hashlib.md5(real_key(s).encode()).hexdigest()
 
 
 class CryptoData(object):
@@ -51,7 +53,7 @@ class CryptoData(object):
             data = json.dumps(data, ensure_ascii=False)
         for i in range(key_loop):
             key = real_key(key)
-        key = add_to_16(key).encode()
+        key = add_to_32(key).encode()
         iv = Random.new().read(AES.block_size)
         cipher = AES.new(key, AES.MODE_CBC, iv)
         data = cipher.encrypt(pad(data.encode(), AES.block_size))
@@ -64,7 +66,7 @@ class CryptoData(object):
         iv = Random.new().read(AES.block_size)
         for i in range(key_loop):
             key = real_key(key)
-        key = add_to_16(key).encode()
+        key = add_to_32(key).encode()
         cipher = AES.new(key, AES.MODE_CBC, iv)
         filesize = os.path.getsize(in_file)
         pos = 0
@@ -86,7 +88,7 @@ class CryptoData(object):
             raise TypeError("only bytes data allowed")
         for i in range(key_loop):
             key = real_key(key)
-        key = add_to_16(key).encode()
+        key = add_to_32(key).encode()
         iv = data[:AES.block_size]
         cipher = AES.new(key, AES.MODE_CBC, iv)
         data = unpad(cipher.decrypt(data[AES.block_size:]), AES.block_size)
@@ -100,7 +102,7 @@ class CryptoData(object):
             iv = fi.read(AES.block_size)
             for i in range(key_loop):
                 key = real_key(key)
-            key = add_to_16(key).encode()
+            key = add_to_32(key).encode()
             cipher = AES.new(key, AES.MODE_CBC, iv)
             filesize = os.path.getsize(in_file)
             pos = cls.qss + AES.block_size  # the filesize and IV.

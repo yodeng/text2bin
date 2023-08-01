@@ -18,7 +18,7 @@ def parseArg():
     return parser.parse_args()
 
 
-def read_bin():
+def read():
     binfile = sys.argv[1]
     key = ""
     if len(sys.argv) > 2:
