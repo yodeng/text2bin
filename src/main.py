@@ -19,6 +19,8 @@ def parseArg():
 
 
 def read():
+    if len(sys.argv) == 1 or "-h" in sys.argv or "-help" in sys.argv or "--help" in sys.argv:
+        sys.exit("Usage: %s enc_file [key]" % sys.argv[0])
     binfile = sys.argv[1]
     key = ""
     if len(sys.argv) > 2:
