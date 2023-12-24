@@ -20,16 +20,16 @@ def parseArg():
 
 def read():
     if len(sys.argv) == 1 or "-h" in sys.argv or "-help" in sys.argv or "--help" in sys.argv:
-        sys.exit("Usage: %s enc_file [key]" % sys.argv[0])
+        sys.exit("Usage: \n\t%s enc_file [key]\n" % sys.argv[0])
     binfile = sys.argv[1]
     key = ""
     if len(sys.argv) > 2:
         key = sys.argv[2]
     if not os.path.isfile(binfile):
         raise IOError("No such file ", binfile)
-    with Bopen(binfile, key=key) as fi:
+    with Bopen(binfile, key=key, text=False) as fi:
         for line in fi:
-            sys.stdout.write(line)
+            sys.stdout.buffer.write(line)
 
 
 def main():

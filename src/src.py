@@ -4,30 +4,32 @@ import os
 import sys
 import argparse
 
-from io import StringIO
+from io import StringIO, BytesIO
 
 from ._crypto import CryptoData
 
 
 class Bopen(object):
 
-    def __init__(self, name, key=None):
+    def __init__(self, name, key=None, text=True):
         self.name = os.path.abspath(name)
         self.key = key
+        self.text = text
         self.chunksize = self.get_chunksize(name)
         self.data = self._cache_data()
 
     def _cache_data(self):
+        dh = self.text and StringIO() or BytesIO()
         try:
-            dh = StringIO()
             c = b""
             for chunk in CryptoData.decrypt_file_iter(self.name, chunksize=self.chunksize, key=self.key):
                 c += chunk
-            dh.write(c.decode())
+            c = c.decode() if self.text else c
+            dh.write(c)
             del c
             dh.seek(0)
         except ValueError:
-            dh = open(self.name)
+            dh = open(self.name, self.text and "r" or "rb")
         except Exception as err:
             raise err
         return dh
