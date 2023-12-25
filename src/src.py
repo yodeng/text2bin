@@ -45,7 +45,7 @@ class Bopen(object):
 
     def __next__(self):
         line = self.readline()
-        if not line:
+        if line == "" or line == b"":
             raise StopIteration
         return line
 
