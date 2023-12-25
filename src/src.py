@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
 import os
+import re
 import sys
 import argparse
+import subprocess
 
+from os.path import join, realpath
 from io import StringIO, BytesIO
 
 from ._crypto import CryptoData
@@ -84,3 +87,59 @@ class Bopen(object):
     def tobin(infile, outbin, key=""):
         chunksize = Bopen.get_chunksize(infile)
         CryptoData.encrypt_file(infile, outbin, chunksize=chunksize, key=key)
+
+
+def exception_hook(et, ev, eb):
+    err = '\x1b[1;31m{0}: {1}\x1b[0m'.format(et.__name__, ev)
+    print(err)
+
+
+def suppress_exceptions(*expts, msg="", trace_exception=True):
+    def outer_wrapper(func):
+        def wrapper(*args, **kwargs):
+            sys.excepthook = trace_exception and sys.__excepthook__ or exception_hook
+            try:
+                res = func(*args, **kwargs)
+            except expts as e:
+                err = msg or str(e)
+                exc = RuntimeError(err)
+                exc.__cause__ = None
+                raise exc
+            else:
+                return res
+        return wrapper
+    return outer_wrapper
+
+
+# @suppress_exceptions(BaseException, msg="program exit", trace_exception=False)
+def exec_scripts(scripts, *args, verbose=True, hide=True, key=__package__, **kw):
+    # exec an encrypto *.pl, *py, *.sh scripts
+    iput = None
+    scripts = realpath(scripts)
+    if scripts.endswith(".py") or scripts.endswith(".pl"):
+        if scripts[-1] == "y":
+            cmd = [sys.executable]
+        else:
+            cmd = [join(sys.prefix, "bin", "perl")]
+        if not hide:
+            cmd.append(scripts)
+        else:
+            with Bopen(scripts, key=key, text=False) as fi:
+                iput = fi.read()
+            cmd.append("-")
+    else:
+        cmd = ["/bin/bash", "-euo", "pipefail"]
+        if not hide:
+            cmd.append(scripts)
+        else:
+            with Bopen(scripts, key=key, text=False) as fi:
+                iput = fi.read()
+            cmd.extend(["-s", "--"])
+    cmd.extend(args)
+    for k, v in kw.items():
+        k = re.sub("^_+", lambda x: x.group().replace("_", "-"), k)
+        if k not in args:
+            cmd.extend([k, v])
+    res = subprocess.run(cmd, input=iput, shell=False,
+                         stdout=verbose and sys.stdout or -3, stderr=-2)
+    res.check_returncode()

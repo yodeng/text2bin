@@ -18,9 +18,8 @@ def parseArg():
     return parser.parse_args()
 
 
+# @suppress_exceptions(BaseException, msg="program exit", trace_exception=False)
 def read():
-    if len(sys.argv) == 1 or "-h" in sys.argv or "-help" in sys.argv or "--help" in sys.argv:
-        sys.exit("Usage: \n\t%s enc_file [key]\n" % sys.argv[0])
     binfile = sys.argv[1]
     key = ""
     if len(sys.argv) > 2:
@@ -33,6 +32,8 @@ def read():
 
 
 def main():
+    if len(sys.argv) == 1 or "-h" in sys.argv or "-help" in sys.argv or "--help" in sys.argv:
+        sys.exit("Usage: \n\t%s enc_file [key]\n" % sys.argv[0])
     args = parseArg()
     Bopen.tobin(args.input, args.output, key=args.key)
 
