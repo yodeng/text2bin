@@ -92,7 +92,7 @@ class Packages(object):
     def _entrys(self):
         eps = [
             '%s = %s.main:main' % ("text2bin", self.name),
-            '%s = %s.main:read' % ("bincat", self.name),
+            '%s = %s.main:bincat' % ("bincat", self.name),
         ]
         return eps
 

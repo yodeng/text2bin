@@ -83,10 +83,17 @@ class Bopen(object):
         size = (filesize // 100) // 16 * 16
         return max(size, 64 * 1024)
 
-    @staticmethod
-    def tobin(infile, outbin, key=""):
-        chunksize = Bopen.get_chunksize(infile)
+    @classmethod
+    def tobin(cls, infile, outbin, key=""):
+        chunksize = cls.get_chunksize(infile)
         CryptoData.encrypt_file(infile, outbin, chunksize=chunksize, key=key)
+
+    encrypt_file = tobin
+
+    @classmethod
+    def decrypt_file(cls, infile, outfile, key=""):
+        chunksize = cls.get_chunksize(infile)
+        CryptoData.decrypt_file(infile, outfile, chunksize=chunksize, key=key)
 
 
 def exception_hook(et, ev, eb):

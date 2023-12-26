@@ -6,20 +6,24 @@ from ._version import __version__
 
 def parseArg():
     parser = argparse.ArgumentParser(
-        description="tools for encrypt a text file",)
-    parser.add_argument("-i", "--input", type=str,
-                              help='input text file, required', required=True, metavar="<file>")
+        description="tools for encrypt/decrypt a regular file",)
+    parser.add_argument("-i", "--input", type=str, required=True,
+                        help='input file, required', metavar="<file>")
     parser.add_argument("-k", "--key", type=str,
-                              help='key passwd for encrypt', metavar="<str>")
-    parser.add_argument('-o', "--output", help="output encrypted binary file, required",
-                              type=str, required=True, metavar="<file>")
+                        help='passwd for encrypt or decrypt', metavar="<str>")
+    parser.add_argument("-o", "--output", type=str, required=True,
+                        help="output file, required", metavar="<file>")
+    parser.add_argument("-d", '--decrypt',  action='store_true', default=False,
+                        help="decrypt file")
     parser.add_argument("-v", '--version',  action='version',
                         version="v" + __version__)
     return parser.parse_args()
 
 
 # @suppress_exceptions(BaseException, msg="program exit", trace_exception=False)
-def read():
+def bincat():
+    if len(sys.argv) == 1 or "-h" in sys.argv or "-help" in sys.argv or "--help" in sys.argv:
+        sys.exit("Usage: \n\t%s enc_file [key]\n" % sys.argv[0])
     binfile = sys.argv[1]
     key = ""
     if len(sys.argv) > 2:
@@ -32,10 +36,11 @@ def read():
 
 
 def main():
-    if len(sys.argv) == 1 or "-h" in sys.argv or "-help" in sys.argv or "--help" in sys.argv:
-        sys.exit("Usage: \n\t%s enc_file [key]\n" % sys.argv[0])
     args = parseArg()
-    Bopen.tobin(args.input, args.output, key=args.key)
+    if not args.decrypt:
+        Bopen.encrypt_file(args.input, args.output, key=args.key)
+    else:
+        Bopen.decrypt_file(args.input, args.output, key=args.key)
 
 
 if __name__ == "__main__":

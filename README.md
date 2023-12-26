@@ -1,8 +1,8 @@
 # text2bin
 
-text2bin is a tool to encrypt `text` file. The encrypted file can not be read directly but can be easily read by text2bin api. So, this can be simplely used for `text` file protection when you don't want the contents of the text to be seen by others.
+text2bin is a tool for encrypt or decrypt a regular file. 
 
-*Warning: This is  only work for TEXT files*
+The encrypted file can not be read directly， but can be easily read by text2bin api.
 
 ### install
 
@@ -14,7 +14,7 @@ pip install git+https://github.com/yodeng/text2bin.git
 
 ### usage
 
-##### encrypt text file:
+##### encrypt file:
 
 ```shell
 $ cat a.txt
@@ -24,15 +24,28 @@ hello!
 $ text2bin -i a.txt -o a.tb
 ```
 
-##### decrypt file by python code:
+
+
+##### decrypt  file
+
+```shell
+$ text2bin -i a.tb -o a.txt -d
+$ cat a.txt
+你好！
+hello!
+```
+
+
+
+##### decrypt file in python code:
 
 ```python
+import sys
 from text2bin import Bopen
-with Bopen("example/a.tb") as fi:
+with Bopen("example/a.tb", text=False) as fi:
     for line in fi:
-        print(line.strip())
+        sys.stdout.buffer.write(line)
 
-## this will output:
 # 你好！
 # hello!
 ```
