@@ -41,6 +41,7 @@ def main():
         Bopen.encrypt_file(args.input, args.output, key=args.key)
     else:
         Bopen.decrypt_file(args.input, args.output, key=args.key)
+    os.chmod(args.output, os.stat(args.input).st_mode)
 
 
 if __name__ == "__main__":

@@ -6,8 +6,8 @@ import sys
 import argparse
 import subprocess
 
-from os.path import join, realpath
 from io import StringIO, BytesIO
+from os.path import join, realpath, abspath
 
 from ._crypto import CryptoData
 
@@ -15,7 +15,7 @@ from ._crypto import CryptoData
 class Bopen(object):
 
     def __init__(self, name, key=None, text=True):
-        self.name = os.path.abspath(name)
+        self.name = abspath(name)
         self.key = key
         self.text = text
         self.chunksize = self.get_chunksize(name)
