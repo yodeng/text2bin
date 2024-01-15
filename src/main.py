@@ -35,6 +35,24 @@ def bincat():
             sys.stdout.buffer.write(line)
 
 
+# @suppress_exceptions(BaseException, msg="program exit", trace_exception=False)
+def binrun():
+    parser = argparse.ArgumentParser(
+        description="tools for run a encrypt '.pl/.py/.sh/.r' scripts",
+        add_help=False)
+    parser.add_argument("--key", type=str,
+                        help='passwd for encrypt or decrypt', metavar="<str>")
+    parser.add_argument("cmd", type=str,
+                        help='run command, required', metavar="<cmd>")
+    parser.add_argument("-v", '--version',  action='version',
+                        version="v" + __version__)
+    if len(sys.argv) == 1 or sys.argv[1] in ["-h", "-help", "--help"]:
+        parser.print_help()
+        parser.exit()
+    args, options = parser.parse_known_args()
+    exec_scripts(args.cmd, *options, key=args.key or __package__)
+
+
 def main():
     args = parseArg()
     if not args.decrypt:

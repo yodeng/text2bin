@@ -93,6 +93,7 @@ class Packages(object):
         eps = [
             '%s = %s.main:main' % ("text2bin", self.name),
             '%s = %s.main:bincat' % ("bincat", self.name),
+            '%s = %s.main:binrun' % ("binrun", self.name),
         ]
         return eps
 

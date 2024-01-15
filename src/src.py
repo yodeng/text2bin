@@ -109,7 +109,15 @@ def suppress_exceptions(*expts, msg="", trace_exception=True):
                 res = func(*args, **kwargs)
             except expts as e:
                 err = msg or str(e)
-                exc = RuntimeError(err)
+                if isinstance(e, SystemExit):
+                    if e.code:
+                        exc = SystemExit(err)
+                    else:
+                        exc = e
+                elif isinstance(e, KeyboardInterrupt):
+                    exc = KeyboardInterrupt(err)
+                else:
+                    exc = RuntimeError(err)
                 exc.__cause__ = None
                 raise exc
             else:
@@ -119,34 +127,37 @@ def suppress_exceptions(*expts, msg="", trace_exception=True):
 
 
 # @suppress_exceptions(BaseException, msg="program exit", trace_exception=False)
-def exec_scripts(scripts, *args, verbose=True, hide=True, key=__package__, **kw):
-    # exec an encrypto *.pl, *py, *.sh scripts
-    iput = None
+def exec_scripts(scripts, *args, verbose=True, pipe=True, key=__package__, **default_options):
+    # exec an encrypto *.pl, *py, *.sh, *.r scripts
+    _input = None
     scripts = realpath(scripts)
-    if scripts.endswith(".py") or scripts.endswith(".pl"):
-        if scripts[-1] == "y":
-            cmd = [sys.executable]
-        else:
-            cmd = [join(sys.prefix, "bin", "perl")]
-        if not hide:
-            cmd.append(scripts)
-        else:
-            with Bopen(scripts, key=key, text=False) as fi:
-                iput = fi.read()
-            cmd.append("-")
+    cmd = []
+    prog = "sh"
+    if scripts.endswith(".py"):
+        cmd.append(sys.executable)
+        prog = "py"
+    elif scripts.endswith(".pl"):
+        cmd.append(join(sys.prefix, "bin", "perl"))
+        prog = "pl"
+    elif scripts.lower().endswith(".r"):
+        cmd.extend([join(sys.prefix, "bin", "Rscript"), "--vanilla"])
+        prog = "r"
     else:
-        cmd = ["/bin/bash", "-euo", "pipefail"]
-        if not hide:
-            cmd.append(scripts)
-        else:
-            with Bopen(scripts, key=key, text=False) as fi:
-                iput = fi.read()
+        cmd.extend(["/bin/bash", "-eo", "pipefail"])
+    if not pipe:
+        cmd.append(scripts)
+    else:
+        with Bopen(scripts, key=key, text=False) as fi:
+            _input = fi.read()
+        if prog == "sh":
             cmd.extend(["-s", "--"])
+        else:
+            cmd.append("-")
     cmd.extend(args)
-    for k, v in kw.items():
+    for k, v in default_options.items():
         k = re.sub("^_+", lambda x: x.group().replace("_", "-"), k)
         if k not in args:
             cmd.extend([k, v])
-    res = subprocess.run(cmd, input=iput, shell=False,
+    res = subprocess.run(cmd, input=_input, shell=False,
                          stdout=verbose and sys.stdout or -3, stderr=-2)
     res.check_returncode()
