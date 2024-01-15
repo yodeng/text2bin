@@ -41,16 +41,16 @@ def binrun():
         description="tools for run a encrypt '.pl/.py/.sh/.r' scripts",
         add_help=False)
     parser.add_argument("--key", type=str,
-                        help='passwd for encrypt or decrypt', metavar="<str>")
+                        help='passwd for decrypt', metavar="<str>")
     parser.add_argument("cmd", type=str,
-                        help='run command, required', metavar="<cmd>")
+                        help='run command, required', metavar="<command>")
     parser.add_argument("-v", '--version',  action='version',
                         version="v" + __version__)
     if len(sys.argv) == 1 or sys.argv[1] in ["-h", "-help", "--help"]:
         parser.print_help()
         parser.exit()
     args, options = parser.parse_known_args()
-    exec_scripts(args.cmd, *options, key=args.key or __package__)
+    exec_scripts(args.cmd, *options, key=args.key)
 
 
 def main():

@@ -7,7 +7,9 @@ import argparse
 import subprocess
 
 from io import StringIO, BytesIO
-from os.path import join, realpath, abspath
+from os.path import join, realpath, abspath, exists, isfile, basename
+
+from distutils.spawn import find_executable
 
 from ._crypto import CryptoData
 
@@ -126,24 +128,51 @@ def suppress_exceptions(*expts, msg="", trace_exception=True):
     return outer_wrapper
 
 
+def is_exe(file_path):
+    return (
+        exists(file_path)
+        and os.access(file_path, os.X_OK)
+        and isfile(realpath(file_path))
+    )
+
+
+def which(e):
+    p = find_executable(e)
+    if p and is_exe(p):
+        return p
+    return e
+
+
 # @suppress_exceptions(BaseException, msg="program exit", trace_exception=False)
 def exec_scripts(scripts, *args, verbose=True, pipe=True, key=__package__, **default_options):
     # exec an encrypto *.pl, *py, *.sh, *.r scripts
     _input = None
-    scripts = realpath(scripts)
     cmd = []
+    if args and which(scripts) and basename(scripts) in ["perl", "python", "sh", "bash", "python3", "python2"]:
+        cmd.append(which(scripts))
+        scripts = realpath(args[0])
+        args = args[1:]
     prog = "sh"
+    scripts = realpath(scripts)
+    if not isfile(scripts):
+        raise OSError("'%s' not found" % scripts)
     if scripts.endswith(".py"):
-        cmd.append(sys.executable)
+        if not cmd:
+            cmd.append(sys.executable)
         prog = "py"
     elif scripts.endswith(".pl"):
-        cmd.append(join(sys.prefix, "bin", "perl"))
+        if not cmd:
+            cmd.append(join(sys.prefix, "bin", "perl"))
         prog = "pl"
     elif scripts.lower().endswith(".r"):
-        cmd.extend([join(sys.prefix, "bin", "Rscript"), "--vanilla"])
+        if not cmd:
+            cmd.append(join(sys.prefix, "bin", "Rscript"))
+        cmd.append("--vanilla")
         prog = "r"
     else:
-        cmd.extend(["/bin/bash", "-eo", "pipefail"])
+        if not cmd:
+            cmd.append("/bin/bash")
+        cmd.extend(["-eo", "pipefail"])
     if not pipe:
         cmd.append(scripts)
     else:
@@ -159,5 +188,5 @@ def exec_scripts(scripts, *args, verbose=True, pipe=True, key=__package__, **def
         if k not in args:
             cmd.extend([k, v])
     res = subprocess.run(cmd, input=_input, shell=False,
-                         stdout=verbose and sys.stdout or -3, stderr=-2)
+                         stdout=None if verbose else -3, stderr=-2)
     res.check_returncode()
