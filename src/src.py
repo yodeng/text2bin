@@ -6,6 +6,7 @@ import sys
 import argparse
 import subprocess
 
+from functools import wraps
 from io import StringIO, BytesIO
 from os.path import join, realpath, abspath, exists, isfile, basename
 
@@ -105,6 +106,7 @@ def exception_hook(et, ev, eb):
 
 def suppress_exceptions(*expts, msg="", trace_exception=True):
     def outer_wrapper(func):
+        @wraps(func)
         def wrapper(*args, **kwargs):
             sys.excepthook = trace_exception and sys.__excepthook__ or exception_hook
             try:
@@ -144,7 +146,7 @@ def which(e):
 
 
 # @suppress_exceptions(BaseException, msg="program exit", trace_exception=False)
-def exec_scripts(scripts, *args, verbose=True, pipe=True, key=__package__, **default_options):
+def exec_scripts(scripts, *args, verbose=True, pipe=True, key=None, **default_options):
     # exec an encrypto *.pl, *py, *.sh, *.r scripts
     _input = None
     cmd = []
@@ -183,10 +185,11 @@ def exec_scripts(scripts, *args, verbose=True, pipe=True, key=__package__, **def
         else:
             cmd.append("-")
     cmd.extend(args)
+    # command line flag args: '--input abc' like '__input="abc"' in default_options
     for k, v in default_options.items():
         k = re.sub("^_+", lambda x: x.group().replace("_", "-"), k)
         if k not in args:
             cmd.extend([k, v])
     res = subprocess.run(cmd, input=_input, shell=False,
-                         stdout=None if verbose else -3, stderr=-2)
+                         stdout=None if verbose and sys.excepthook == sys.__excepthook__ else -3, stderr=-2)
     res.check_returncode()
