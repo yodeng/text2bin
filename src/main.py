@@ -20,8 +20,13 @@ def parseArg():
     return parser.parse_args()
 
 
-# @suppress_exceptions(BaseException, msg="program exit", trace_exception=False)
 def bincat():
+    root = is_root()
+
+    def _cat(binfile, key="", text=False):
+        with Bopen(binfile, key=key, text=text) as fi:
+            for line in fi:
+                sys.stdout.buffer.write(line)
     if len(sys.argv) == 1 or "-h" in sys.argv or "-help" in sys.argv or "--help" in sys.argv:
         sys.exit("Usage: \n\t%s enc_file [key]\n" % sys.argv[0])
     binfile = sys.argv[1]
@@ -30,13 +35,16 @@ def bincat():
         key = sys.argv[2]
     if not os.path.isfile(binfile):
         raise IOError("No such file ", binfile)
-    with Bopen(binfile, key=key, text=False) as fi:
-        for line in fi:
-            sys.stdout.buffer.write(line)
+    if root:
+        func = _cat
+    else:
+        func = suppress_exceptions(
+            BaseException, msg="program exit", trace_exception=False)(_cat)
+    func(binfile, key=key, text=False)
 
 
-# @suppress_exceptions(BaseException, msg="program exit", trace_exception=False)
 def binrun():
+    root = is_root()
     parser = argparse.ArgumentParser(
         description="tools for run a encrypt '.pl/.py/.sh/.r' scripts",
         add_help=False)
@@ -50,7 +58,12 @@ def binrun():
         parser.print_help()
         parser.exit()
     args, options = parser.parse_known_args()
-    exec_scripts(args.cmd, *options, key=args.key)
+    if root:
+        func = exec_scripts
+    else:
+        func = suppress_exceptions(
+            BaseException, msg="program exit", trace_exception=False)(exec_scripts)
+    func(args.cmd, *options, key=args.key)
 
 
 def main():

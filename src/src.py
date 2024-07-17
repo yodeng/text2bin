@@ -3,6 +3,7 @@
 import os
 import re
 import sys
+import struct
 import argparse
 import subprocess
 
@@ -34,7 +35,7 @@ class Bopen(object):
             dh.write(c)
             del c
             dh.seek(0)
-        except ValueError:
+        except (ValueError, struct.error):
             dh = open(self.name, self.text and "r" or "rb")
         except Exception as err:
             raise err
@@ -104,14 +105,14 @@ def exception_hook(et, ev, eb):
     print(err)
 
 
-def suppress_exceptions(*expts, msg="", trace_exception=True):
+def suppress_exceptions(*exception, msg="", trace_exception=True):
     def outer_wrapper(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             sys.excepthook = trace_exception and sys.__excepthook__ or exception_hook
             try:
                 res = func(*args, **kwargs)
-            except expts as e:
+            except exception as e:
                 err = msg or str(e)
                 if isinstance(e, SystemExit):
                     if e.code:
@@ -191,5 +192,15 @@ def exec_scripts(scripts, *args, verbose=True, pipe=True, key=None, **default_op
         if k not in args:
             cmd.extend([k, v])
     res = subprocess.run(cmd, input=_input, shell=False,
-                         stdout=None if verbose and sys.excepthook == sys.__excepthook__ else -3, stderr=-2)
+                         stdout=subprocess.PIPE, stderr=-2)
     res.check_returncode()
+    sys.stdout.buffer.write(res.stdout)
+
+
+def is_root():
+    if "--root" in sys.argv:
+        root = True
+        sys.argv.remove("--root")
+    else:
+        root = False
+    return root
