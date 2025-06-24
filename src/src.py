@@ -18,11 +18,12 @@ from ._crypto import CryptoData
 
 class Bopen(object):
 
-    def __init__(self, name, key=None, text=True):
+    def __init__(self, name, key=None, text=True, force_binary=False):
         self.name = abspath(name)
         self.key = key
         self.text = text
         self.chunksize = self.get_chunksize(name)
+        self.force_binary = force_binary
         self.data = self._cache_data()
 
     def _cache_data(self):
@@ -35,7 +36,9 @@ class Bopen(object):
             dh.write(c)
             del c
             dh.seek(0)
-        except (ValueError, struct.error):
+        except (ValueError, struct.error) as err:
+            if self.force_binary:
+                raise ValueError(f"can not open file {self.name}")
             dh = open(self.name, self.text and "r" or "rb")
         except Exception as err:
             raise err
