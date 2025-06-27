@@ -9,9 +9,9 @@ import subprocess
 
 from functools import wraps
 from io import StringIO, BytesIO
-from os.path import join, realpath, abspath, exists, isfile, basename
+from os.path import join, realpath, abspath, exists, isfile, basename, dirname, split, expanduser
 
-from distutils.spawn import find_executable
+from shutil import which as _which
 
 from ._crypto import CryptoData
 
@@ -142,11 +142,23 @@ def is_exe(file_path):
     )
 
 
-def which(e):
-    p = find_executable(e)
-    if p and is_exe(p):
-        return p
-    return e
+def canonicalize(path):
+    return abspath(expanduser(path))
+
+
+def which(program):
+    ex = dirname(sys.executable)
+    found_path = None
+    fpath, fname = split(program)
+    if fpath:
+        program = canonicalize(program)
+        if is_exe(program):
+            found_path = program
+    else:
+        if is_exe(join(ex, program)):
+            return join(ex, program)
+        found_path = _which(program)
+    return found_path
 
 
 # @suppress_exceptions(BaseException, msg="program exit", trace_exception=False)
@@ -154,7 +166,7 @@ def exec_scripts(scripts, *args, verbose=True, pipe=True, key=None, **default_op
     # exec an encrypto *.pl, *py, *.sh, *.r scripts
     _input = None
     cmd = []
-    if args and which(scripts) and basename(scripts) in ["perl", "python", "sh", "bash", "python3", "python2"]:
+    if args and which(scripts) and basename(scripts) in ["perl", "python", "sh", "bash", "python3", "python2", "Rscript"]:
         cmd.append(which(scripts))
         scripts = realpath(args[0])
         args = args[1:]
@@ -164,20 +176,20 @@ def exec_scripts(scripts, *args, verbose=True, pipe=True, key=None, **default_op
         raise OSError("'%s' not found" % scripts)
     if scripts.endswith(".py"):
         if not cmd:
-            cmd.append(sys.executable)
+            cmd.append(which("python"))
         prog = "py"
     elif scripts.endswith(".pl"):
         if not cmd:
-            cmd.append(join(sys.prefix, "bin", "perl"))
+            cmd.append(which("perl"))
         prog = "pl"
     elif scripts.lower().endswith(".r"):
         if not cmd:
-            cmd.append(join(sys.prefix, "bin", "Rscript"))
+            cmd.append(which("Rscript"))
         cmd.append("--vanilla")
         prog = "r"
     else:
         if not cmd:
-            cmd.append("/bin/bash")
+            cmd.append(which("bash"))
         cmd.extend(["-eo", "pipefail"])
     if not pipe:
         cmd.append(scripts)
